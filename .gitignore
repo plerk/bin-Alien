@@ -1,0 +1,5 @@
+/src/*.tar.gz
+/src/*.tmp
+/build/
+/local/
+/dist/
