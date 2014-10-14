@@ -5,12 +5,10 @@ CP=cp
 MKDIR=mkdir -p
 PERL=perl
 
-TARGET=i586-mingw32msvc
-
-HOST_ARCH=$(TARGET)
+HOST_ARCH=i586-mingw32msvc
 
 BUILD_ROOT=/home/ollisg/dev/bin-libarchive
-BUILD_ARCH=$(TARGET)
+BUILD_ARCH=x86_64-unknown-linux
 BUILD_PREFIX=$(BUILD_ROOT)/local/$(LIBARCHIVE_VERSION)-$(BUILD_ARCH)/libarchive
 
 LIBARCHIVE_VERSION=3.1.2
@@ -19,17 +17,23 @@ LIBARCHIVE_CONFIGURE=--prefix=$(BUILD_PREFIX) \
 	--without-xml2                        \
 	--host=$(HOST_ARCH)                   \
 	--build=$(BUILD_ARCH)
-LIBARCHIVE_BIN_TAR=$(BUILD_ROOT)/dist/libarchive-$(LIBARCHIVE_VERSION)-$(BUILD_ARCH).tar.gz
-LIBARCHIVE_INSTALLER=$(BUILD_ROOT)/dist/libarchive-$(LIBARCHIVE_VERSION)-$(BUILD_ARCH)-setup.exe
+LIBARCHIVE_BIN_TAR=$(BUILD_ROOT)/dist/libarchive-$(LIBARCHIVE_VERSION)-$(HOST_ARCH).tar.gz
+LIBARCHIVE_INSTALLER=$(BUILD_ROOT)/dist/libarchive-$(LIBARCHIVE_VERSION)-$(HOST_ARCH)-setup.exe
 LIBARCHIVE_INSTALLER_OPTIONS=\
 	--appname=libarchive			\
 	--orgname='White Dactyl Labs'		\
 	--version=$(LIBARCHIVE_VERSION)		\
 	--icon=resource/icon.ico                \
-	--nsi=$(BUILD_ROOT)/dist/libarchive-$(LIBARCHIVE_VERSION)-$(BUILD_ARCH)-setup.nsi
+	--nsi=$(BUILD_ROOT)/dist/libarchive-$(LIBARCHIVE_VERSION)-$(HOST_ARCH)-setup.nsi
 	--description='Multi-format archive and compression library'
 
 libarchive: $(LIBARCHIVE_BIN_TAR) $(LIBARCHIVE_INSTALLER)
+
+win32:
+	$(MAKE)
+
+win64:
+	$(MAKE) HOST_ARCH=x86_64-w64-mingw32
 
 $(LIBARCHIVE_INSTALLER): $(LIBARCHIVE_BIN_TAR)
 	$(PERL) script/create_installer.pl $(LIBARCHIVE_BIN_TAR) --setup=$(LIBARCHIVE_INSTALLER) $(LIBARCHIVE_INSTALLER_OPTIONS)
