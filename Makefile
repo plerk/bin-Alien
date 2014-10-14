@@ -1,6 +1,7 @@
 WGET=wget
 RM=rm -f
 MV=mv
+CP=cp
 MKDIR=mkdir -p
 PERL=perl
 
@@ -24,6 +25,7 @@ LIBARCHIVE_INSTALLER_OPTIONS=\
 	--appname=libarchive			\
 	--orgname='White Dactyl Labs'		\
 	--version=$(LIBARCHIVE_VERSION)		\
+	--icon=resource/icon.ico                \
 	--nsi=$(BUILD_ROOT)/dist/libarchive-$(LIBARCHIVE_VERSION)-$(BUILD_ARCH)-setup.nsi
 	--description='Multi-format archive and compression library'
 
@@ -37,6 +39,10 @@ $(LIBARCHIVE_BIN_TAR): $(LIBARCHIVE_SRC_TAR)
 	cd build ; tar zxf $(LIBARCHIVE_SRC_TAR)
 	cd build/libarchive-$(LIBARCHIVE_VERSION) ; ./configure $(LIBARCHIVE_CONFIGURE) && make V=1 && rm -rf $(BUILD_PREFIX) &&make V=1 install
 	$(MKDIR) $(BUILD_ROOT)/dist
+	$(PERL) script/update_pkgconfig.pl $(BUILD_PREFIX)
+	$(PERL) script/install_doco.pl build/libarchive-$(LIBARCHIVE_VERSION)/COPYING  $(BUILD_PREFIX)
+	$(PERL) script/install_doco.pl build/libarchive-$(LIBARCHIVE_VERSION)/README   $(BUILD_PREFIX)
+	$(PERL) script/install_doco.pl build/libarchive-$(LIBARCHIVE_VERSION)/NEWS     $(BUILD_PREFIX)
 	cd $(BUILD_PREFIX)/.. ; tar zcvf $(LIBARCHIVE_BIN_TAR) libarchive
 
 $(LIBARCHIVE_SRC_TAR):

@@ -13,6 +13,7 @@ our $opt_appname     = 'appname ' . Data::GUID->new->as_string;
 our $opt_orgname     = 'orgname';
 our $opt_description = 'Empty Description';
 our $opt_version     = '0.00';
+our $opt_icon;
 my $opt_setup;
 my $opt_nsi;
 
@@ -23,7 +24,14 @@ GetOptions(
   "description=s" => \$opt_description,
   "setup=s"       => \$opt_setup,
   "nsi=s"         => \$opt_nsi,
+  "icon=s"        => \$opt_icon,
 );
+
+if(defined $opt_icon)
+{
+  $opt_icon = Path::Class::File->new($opt_icon);
+  $opt_icon = $opt_icon->absolute unless $opt_icon->is_absolute;
+}
 
 if(defined $opt_setup)
 {
@@ -73,6 +81,11 @@ run 'tar', 'zxvf', $tarball;
 
 say "+ cd $dir";
 $CWD = $dir;
+
+if(defined $opt_icon)
+{
+  run 'cp', $opt_icon, 'icon.ico';
+}
 
 say '+ @@ scanning @@';
 
@@ -141,16 +154,15 @@ RequestExecutionLevel admin
 
 InstallDir "$PROGRAMFILES\${ORGNAME}\${APPNAME}"
 
-# TODO: install COPYING file as part of tarball
-#       convert COPYING file to rtf format
-# LicenseData "license.rtf"
+<< -e 'license.rtf' ? q{LicenseData "license.rtf"} : '' >>
 
 Name "${ORGNAME} - ${APPNAME}"
+<< $opt_icon ? 'Icon "icon.ico"' : '' >>
 outFile "..\setup.exe"
 
 !include LogicLib.nsh
 
-# Page license
+<< -e 'license.rtf' ? 'Page license' : '' >>
 Page directory
 Page instfiles
 
@@ -192,8 +204,7 @@ section "install"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "InstallLocation" "$\"$INSTDIR$\""
-  # TODO
-  #WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "DisplayIcon" "$\"$INSTDIR\logo.ico$\""
+  << $opt_icon ? q{WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "DisplayIcon" "$\"$INSTDIR\icon.ico$\""} : '' >>
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "Publisher" "$\"${ORGNAME}$\""
   #WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "HelpLink" "$\"${HELPURL}$\""
   #WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "URLUpdateInfo" "$\"${UPDATEURL}$\""
