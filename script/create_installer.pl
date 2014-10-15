@@ -229,6 +229,7 @@ section "install"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "NoRepair" 1
   # Set the INSTALLSIZE constant (!defined at the top of this script) so Add/Remove Programs can accurately report the size
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "EstimatedSize" ${INSTALLSIZE}
+<< -d "$package_dir/lib/pkgconfig" ? '  WriteRegStr HKLM "Software\\pkgconfig\\PKG_CONFIG_PATH" "${ORGNAME} ${APPNAME}" "$INSTDIR\\lib\\pkgconfig"' : '' >>
 
 sectionEnd
 
@@ -258,6 +259,7 @@ section "uninstall"
   delete $INSTDIR\uninstall.exe
   rmDir $INSTDIR
   
+<< -d "$package_dir/lib/pkgconfig" ? '  DeleteRegValue HKLM "Software\\pkgconfig\\PKG_CONFIG_PATH" "${ORGNAME} ${APPNAME}"' : '' >>
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}"
 sectionEnd
 
