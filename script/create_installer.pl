@@ -9,8 +9,8 @@ use Path::Class::File;
 use Getopt::Long qw( GetOptions );
 use Data::GUID;
 
-our $opt_appname     = 'appname ' . Data::GUID->new->as_string;
-our $opt_orgname     = 'orgname';
+our $opt_appname     = 'app ' . Data::GUID->new->as_string;
+our $opt_orgname     = 'org';
 our $opt_description = 'Empty Description';
 our $opt_version     = '0.00';
 our $opt_icon;
