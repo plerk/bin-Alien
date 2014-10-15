@@ -5,6 +5,7 @@ CP=cp
 MKDIR=mkdir -p
 PERL=perl
 
+BITS=
 HOST_ARCH=i586-mingw32msvc
 
 BUILD_ROOT=/home/ollisg/dev/bin-libarchive
@@ -19,7 +20,8 @@ LIBARCHIVE_CONFIGURE=--prefix=$(BUILD_PREFIX) \
 	--build=$(BUILD_ARCH)
 LIBARCHIVE_BIN_TAR=$(BUILD_ROOT)/dist/libarchive-$(LIBARCHIVE_VERSION)-$(HOST_ARCH).tar.gz
 LIBARCHIVE_INSTALLER=$(BUILD_ROOT)/dist/libarchive-$(LIBARCHIVE_VERSION)-$(HOST_ARCH)-setup.exe
-LIBARCHIVE_INSTALLER_OPTIONS=\
+LIBARCHIVE_INSTALLER_OPTIONS=                   \
+        $(BITS)                                 \
 	--appname=libarchive			\
 	--orgname='White Dactyl Labs'		\
 	--version=$(LIBARCHIVE_VERSION)		\
@@ -33,7 +35,7 @@ win32:
 	$(MAKE) libarchive BUILD_ROOT=`pwd` HOST_ARCH=i586-mingw32msvc
 
 win64:
-	$(MAKE) libarchive BUILD_ROOT=`pwd` HOST_ARCH=x86_64-w64-mingw32
+	$(MAKE) libarchive BUILD_ROOT=`pwd` HOST_ARCH=x86_64-w64-mingw32 BITS=-64
 
 libarchive: $(LIBARCHIVE_BIN_TAR) $(LIBARCHIVE_INSTALLER)
 

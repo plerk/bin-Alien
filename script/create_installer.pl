@@ -14,6 +14,7 @@ our $opt_orgname     = 'orgname';
 our $opt_description = 'Empty Description';
 our $opt_version     = '0.00';
 our $opt_icon;
+our $opt_64          = 0;
 my $opt_setup;
 my $opt_nsi;
 
@@ -25,6 +26,7 @@ GetOptions(
   "setup=s"       => \$opt_setup,
   "nsi=s"         => \$opt_nsi,
   "icon=s"        => \$opt_icon,
+  "64"            => \$opt_64,
 );
 
 if(defined $opt_icon)
@@ -153,8 +155,6 @@ __DATA__
 
 RequestExecutionLevel admin
 
-InstallDir "$PROGRAMFILES\${ORGNAME}\${APPNAME}"
-
 << -e "$package_dir/license.rtf" ? qq{LicenseData "$package_dir\\license.rtf"} : '' >>
 
 Name "${ORGNAME} - ${APPNAME}"
@@ -177,9 +177,33 @@ quit
 ${EndIf}
 !macroend
 
+<< $opt_64 ? q{
+!include "x64.nsh"
+
+InstallDir "$PROGRAMFILES64\${ORGNAME}\${APPNAME}"
+
+!macro VerifyBitness
+${If} ${RunningX64}
+  DetailPrint "Installer running on 64-bit host"
+  SetRegView 64
+${Else}
+  DetailPrint "Installer running on 32-bit host"  
+  MessageBox MB_ICONSTOP "64 bit windows is required"
+  Quit
+${EndIf}
+!macroend
+} : q{
+
+InstallDir "$PROGRAMFILES\${ORGNAME}\${APPNAME}"
+
+!macro VerifyBitness
+!macroend
+} >>
+
 function .onInit
   setShellVarContext all
   !insertmacro VerifyUserIsAdmin
+  !insertmacro VerifyBitness
 functionEnd
 
 section "install"
@@ -188,7 +212,7 @@ section "install"
   File /r << $package_dir >>\*.*
   writeUninstaller "$INSTDIR\uninstall.exe"
 
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "DisplayName" "${ORGNAME} - ${APPNAME} - ${DESCRIPTION}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "DisplayName" "${ORGNAME} - ${APPNAME} - ${DESCRIPTION}<< $opt_64 ? ' 64bit' : '' >>"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "InstallLocation" "$\"$INSTDIR$\""
@@ -214,6 +238,7 @@ section un.onInit
     ABORT
   next:
   !insertmacro VerifyUserIsAdmin
+  !insertmacro VerifyBitness
 sectionEnd
 
 section "uninstall"
@@ -221,12 +246,12 @@ section "uninstall"
 
   foreach my $file (map { $_->as_foreign('Win32') } @files) 
   {
-    $OUT .= qq{  delete \$INSTDIR\\$file\n};
+    $OUT .= qq{  delete /rebootok \$INSTDIR\\$file\n};
   }
   
   foreach my $dir (map { $_->as_foreign('Win32') } reverse @dirs)
   {
-    $OUT .= qq{  rmDir \$INSTDIR\\$dir\n};
+    $OUT .= qq{  rmDir /rebootok \$INSTDIR\\$dir\n};
   }
 
 >>
