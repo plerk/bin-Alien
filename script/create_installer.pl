@@ -117,6 +117,9 @@ sub recurse {
 
 recurse(Path::Class::Dir->new);
 
+# convert into k (i guess?)
+$installsize = int( $installsize / 1024 );
+
 ($dir) = $dir->parent;
 say "+ cd $dir";
 $CWD = $dir;
