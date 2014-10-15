@@ -155,7 +155,7 @@ RequestExecutionLevel admin
 
 InstallDir "$PROGRAMFILES\${ORGNAME}\${APPNAME}"
 
-<< -e 'license.rtf' ? q{LicenseData "license.rtf"} : '' >>
+<< -e "$package_dir/license.rtf" ? qq{LicenseData "$package_dir\\license.rtf"} : '' >>
 
 Name "${ORGNAME} - ${APPNAME}"
 << $opt_icon ? qq{Icon "$package_dir\\icon.ico"} : '' >>
@@ -163,7 +163,7 @@ outFile "setup.exe"
 
 !include LogicLib.nsh
 
-<< -e 'license.rtf' ? 'Page license' : '' >>
+<< -e "$package_dir/license.rtf" ? 'Page license' : '' >>
 Page directory
 Page instfiles
 
@@ -224,7 +224,7 @@ section "uninstall"
     $OUT .= qq{  delete \$INSTDIR\\$file\n};
   }
   
-  foreach my $dir (map { $_->as_foreign('Win32') } @dirs)
+  foreach my $dir (map { $_->as_foreign('Win32') } reverse @dirs)
   {
     $OUT .= qq{  rmDir \$INSTDIR\\$dir\n};
   }

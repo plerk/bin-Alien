@@ -27,21 +27,24 @@ LIBARCHIVE_INSTALLER_OPTIONS=\
 	--nsi=$(BUILD_ROOT)/dist/libarchive-$(LIBARCHIVE_VERSION)-$(HOST_ARCH)-setup.nsi
 	--description='Multi-format archive and compression library'
 
-libarchive: $(LIBARCHIVE_BIN_TAR) $(LIBARCHIVE_INSTALLER)
+all: win32 win64
 
 win32:
-	$(MAKE)
+	$(MAKE) libarchive BUILD_ROOT=`pwd` HOST_ARCH=i586-mingw32msvc
 
 win64:
-	$(MAKE) HOST_ARCH=x86_64-w64-mingw32
+	$(MAKE) libarchive BUILD_ROOT=`pwd` HOST_ARCH=x86_64-w64-mingw32
+
+libarchive: $(LIBARCHIVE_BIN_TAR) $(LIBARCHIVE_INSTALLER)
 
 $(LIBARCHIVE_INSTALLER): $(LIBARCHIVE_BIN_TAR)
 	$(PERL) script/create_installer.pl $(LIBARCHIVE_BIN_TAR) --setup=$(LIBARCHIVE_INSTALLER) $(LIBARCHIVE_INSTALLER_OPTIONS)
 
 $(LIBARCHIVE_BIN_TAR): $(LIBARCHIVE_SRC_TAR)
 	$(MKDIR) build
+	$(RM) -r build/libarchive-$(LIBARCHIVE_VERSION)
 	cd build ; tar zxf $(LIBARCHIVE_SRC_TAR)
-	cd build/libarchive-$(LIBARCHIVE_VERSION) ; ./configure $(LIBARCHIVE_CONFIGURE) && make V=1 && rm -rf $(BUILD_PREFIX) &&make V=1 install
+	cd build/libarchive-$(LIBARCHIVE_VERSION) ; ./configure $(LIBARCHIVE_CONFIGURE) && make V=1 && rm -rf $(BUILD_PREFIX) && make V=1 install
 	$(MKDIR) $(BUILD_ROOT)/dist
 	$(PERL) script/update_pkgconfig.pl $(BUILD_PREFIX)
 	$(PERL) script/install_doco.pl build/libarchive-$(LIBARCHIVE_VERSION)/COPYING  $(BUILD_PREFIX)
