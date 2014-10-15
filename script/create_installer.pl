@@ -15,6 +15,7 @@ our $opt_description = 'Empty Description';
 our $opt_version     = '0.00';
 our $opt_icon;
 our $opt_64          = 0;
+our $opt_editenv;
 my $opt_setup;
 my $opt_nsi;
 
@@ -27,12 +28,19 @@ GetOptions(
   "nsi=s"         => \$opt_nsi,
   "icon=s"        => \$opt_icon,
   "64"            => \$opt_64,
+  "editenv=s"     => \$opt_editenv,
 );
 
 if(defined $opt_icon)
 {
   $opt_icon = Path::Class::File->new($opt_icon);
   $opt_icon = $opt_icon->absolute unless $opt_icon->is_absolute;
+}
+
+if(defined $opt_editenv)
+{
+  $opt_editenv = Path::Class::File->new($opt_editenv);
+  $opt_editenv = $opt_editenv->absolute unless $opt_editenv->is_absolute;
 }
 
 if(defined $opt_setup)
@@ -120,6 +128,11 @@ recurse(Path::Class::Dir->new);
 ($dir) = $dir->parent;
 say "+ cd $dir";
 $CWD = $dir;
+
+if(defined $opt_editenv)
+{
+  run 'cp', $opt_editenv, 'editenv.dll';
+}
 
 say '+ @@ creating setup.nsi @@';
 do {
@@ -212,6 +225,15 @@ section "install"
   File /r << $package_dir >>\*.*
   writeUninstaller "$INSTDIR\uninstall.exe"
 
+<< -e 'editenv.dll' ? q{
+  InitPluginsDir
+  SetOutPath "$PLUGINSDIR"
+  File "editenv.dll"
+  System::Call "edit::pathAdd(i 1, t '$INSTDIR\\bin') ? u"
+  Delete "$PLUGINSDIR\\editenv.dll"
+  SetOutPath $INSTDIR
+} : '' >>
+
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "DisplayName" "${ORGNAME} - ${APPNAME} - ${DESCRIPTION}<< $opt_64 ? ' 64bit' : '' >>"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
@@ -243,6 +265,16 @@ section un.onInit
 sectionEnd
 
 section "uninstall"
+
+<< -e 'editenv.dll' ? q{
+  InitPluginsDir
+  SetOutPath "$PLUGINSDIR"
+  File "editenv.dll"
+  System::Call "edit::pathRemove(i 1, t '$INSTDIR\\bin') ? u"
+  Delete "$PLUGINSDIR\\editenv.dll"
+  SetOutPath $INSTDIR
+} : '' >>
+
 <<
 
   foreach my $file (map { $_->as_foreign('Win32') } @files) 

@@ -26,6 +26,7 @@ LIBARCHIVE_INSTALLER_OPTIONS=                   \
 	--orgname='White Dactyl Labs'		\
 	--version=$(LIBARCHIVE_VERSION)		\
 	--icon=resource/icon.ico                \
+	--editenv=resource/editenv.dll          \
 	--nsi=$(BUILD_ROOT)/dist/libarchive-$(LIBARCHIVE_VERSION)-$(HOST_ARCH)-setup.nsi                 \
 	--description='Multi-format archive and compression library'
 
