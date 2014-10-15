@@ -81,6 +81,7 @@ run 'tar', 'zxvf', $tarball;
 
 say "+ cd $dir";
 $CWD = $dir;
+our $package_dir = $dir->basename;
 
 if(defined $opt_icon)
 {
@@ -114,6 +115,10 @@ sub recurse {
 
 recurse(Path::Class::Dir->new);
 
+($dir) = $dir->parent;
+say "+ cd $dir";
+$CWD = $dir;
+
 say '+ @@ creating setup.nsi @@';
 do {
   my $tmpl = Text::Template->new( TYPE => 'STRING', SOURCE => do { local $/; <DATA> }, DELIMITERS => [ '<<', '>>' ], PACKAGE => 'main' );
@@ -129,10 +134,6 @@ if(defined $opt_nsi)
 {
   run 'cp', 'setup.nsi', $opt_nsi;
 }
-
-($dir) = $dir->parent;
-say "+ cd $dir";
-$CWD = $dir;
 
 if(defined $opt_setup)
 {
@@ -157,8 +158,8 @@ InstallDir "$PROGRAMFILES\${ORGNAME}\${APPNAME}"
 << -e 'license.rtf' ? q{LicenseData "license.rtf"} : '' >>
 
 Name "${ORGNAME} - ${APPNAME}"
-<< $opt_icon ? 'Icon "icon.ico"' : '' >>
-outFile "..\setup.exe"
+<< $opt_icon ? qq{Icon "$package_dir\\icon.ico"} : '' >>
+outFile "setup.exe"
 
 !include LogicLib.nsh
 
@@ -184,20 +185,7 @@ functionEnd
 section "install"
   setOutPath $INSTDIR
   
-<<
-
-  foreach my $dir (map { $_->as_foreign('Win32') } @dirs)
-  {
-    $OUT .= qq{  createDirectory "\$INSTDIR\\$dir"\n};
-  }
-
-  foreach my $file (map { $_->as_foreign('Win32') } @files)
-  {
-    $OUT .= qq{  file "$file"\n};
-  }
-
->>  
-  
+  File /r << $package_dir >>\*.*
   writeUninstaller "$INSTDIR\uninstall.exe"
 
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORGNAME} ${APPNAME}" "DisplayName" "${ORGNAME} - ${APPNAME} - ${DESCRIPTION}"
