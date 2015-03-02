@@ -8,8 +8,25 @@ PERL=perl
 BITS=
 HOST_ARCH=i586-mingw32msvc
 
-BUILD_ROOT=/home/ollisg/dev/bin-libarchive
+BUILD_ROOT=$(shell pwd)
 BUILD_ARCH=x86_64-unknown-linux
+
+LIBFFI_VERSION=3.2.1
+LIBFFI_SRC_TAR=$(BUILD_ROOT)/src/libffi-$(LIBFFI_VERSION).tar.gz
+LIBFFI_CONFIGURE=--prefix=$(LIBFFI_BUILD_PREFIX) \
+	--disable-shared --with-pic             \
+	--host=$(HOST_ARCH)                     \
+	--build=$(BUILD_ARCH)
+LIBFFI_BIN_TAR=$(BUILD_ROOT)/dist/libffi-$(LIBFFI_VERSION)-$(HOST_ARCH).tar.gz
+LIBFFI_INSTALLER=$(BUILD_ROOT)/dist/libffi-$(LIBFFI_VERSION)-$(HOST_ARCH)-setup.exe
+LIBFFI_INSTALLER_OPTIONS=                       \
+        $(BITS)                                 \
+	--appname=libffi			\
+	--orgname='White Dactyl Labs'		\
+	--version=$(LIBFFI_VERSION)		\
+	--nsi=$(BUILD_ROOT)/dist/libffi-$(LIBFFI_VERSION)-$(HOST_ARCH)-setup.nsi                 \
+	--description='Portable Foreign Function Interface Library'
+LIBFFI_BUILD_PREFIX=$(BUILD_ROOT)/local/$(LIBFFI_VERSION)-$(BUILD_ARCH)/libffi
 
 LIBARCHIVE_VERSION=3.1.2
 LIBARCHIVE_SRC_TAR=$(BUILD_ROOT)/src/libarchive-$(LIBARCHIVE_VERSION).tar.gz
@@ -32,10 +49,10 @@ LIBARCHIVE_BUILD_PREFIX=$(BUILD_ROOT)/local/$(LIBARCHIVE_VERSION)-$(BUILD_ARCH)/
 all: win32 win64
 
 win32:
-	$(MAKE) libarchive BUILD_ROOT=`pwd` HOST_ARCH=i586-mingw32msvc
+	$(MAKE) libarchive libffi HOST_ARCH=i586-mingw32msvc
 
 win64:
-	$(MAKE) libarchive BUILD_ROOT=`pwd` HOST_ARCH=x86_64-w64-mingw32 BITS=-64
+	$(MAKE) libarchive libffi HOST_ARCH=x86_64-w64-mingw32 BITS=-64
 
 libarchive: $(LIBARCHIVE_BIN_TAR) $(LIBARCHIVE_INSTALLER)
 
@@ -57,6 +74,28 @@ $(LIBARCHIVE_BIN_TAR): $(LIBARCHIVE_SRC_TAR)
 $(LIBARCHIVE_SRC_TAR):
 	$(WGET) http://www.libarchive.org/downloads/libarchive-3.1.2.tar.gz -O $(LIBARCHIVE_SRC_TAR).tmp
 	$(MV) $(LIBARCHIVE_SRC_TAR).tmp $(LIBARCHIVE_SRC_TAR)
+
+libffi: $(LIBFFI_BIN_TAR) $(LIBFFI_INSTALLER)
+
+$(LIBFFI_INSTALLER): $(LIBFFI_BIN_TAR)
+	$(PERL) script/create_installer.pl $(LIBFFI_BIN_TAR) --setup=$(LIBFFI_INSTALLER) $(LIBFFI_INSTALLER_OPTIONS)
+
+$(LIBFFI_BIN_TAR): $(LIBFFI_SRC_TAR)
+	$(MKDIR) build
+	$(RM) -r build/libffi-$(LIBFFI_VERSION)
+	cd build ; tar zxf $(LIBFFI_SRC_TAR)
+	cd build/libffi-$(LIBFFI_VERSION) ; ./configure $(LIBFFI_CONFIGURE) && make V=1 && rm -rf $(LIBFFI_BUILD_PREFIX) && make V=1 install
+	$(MKDIR) $(BUILD_ROOT)/dist
+	$(PERL) script/update_pkgconfig.pl $(LIBFFI_BUILD_PREFIX)
+	$(PERL) script/install_doco.pl build/libffi-$(LIBFFI_VERSION)/LICENSE   $(LIBFFI_BUILD_PREFIX)
+	$(PERL) script/install_doco.pl build/libffi-$(LIBFFI_VERSION)/README    $(LIBFFI_BUILD_PREFIX)
+	cd $(LIBFFI_BUILD_PREFIX)/.. ; tar zcvf $(LIBFFI_BIN_TAR) libffi
+
+$(LIBFFI_SRC_TAR):
+	$(WGET) ftp://sourceware.org/pub/libffi/libffi-$(LIBFFI_VERSION).tar.gz -O $(LIBFFI_SRC_TAR).tmp
+	$(MV) $(LIBFFI_SRC_TAR).tmp $(LIBFFI_SRC_TAR)
+
+src: $(LIBFFI_SRC_TAR) $(LIBARCHIVE_SRC_TAR)
 
 clean:
 	$(RM) src/*.tmp
