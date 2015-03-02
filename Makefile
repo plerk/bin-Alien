@@ -4,12 +4,30 @@ MV=mv
 CP=cp
 MKDIR=mkdir -p
 PERL=perl
+PATCH=patch
 
 BITS=
 HOST_ARCH=i586-mingw32msvc
 
 BUILD_ROOT=$(shell pwd)
 BUILD_ARCH=x86_64-unknown-linux
+
+BISON_VERSION=3.0.4
+BISON_SRC_TAR=$(BUILD_ROOT)/src/bison-$(BISON_VERSION).tar.gz
+BISON_CONFIGURE=--prefix=$(BISON_BUILD_PREFIX) \
+	--host=$(HOST_ARCH)                     \
+	--build=$(BUILD_ARCH)
+BISON_BIN_TAR=$(BUILD_ROOT)/dist/bison-$(BISON_VERSION)-$(HOST_ARCH).tar.gz
+BISON_INSTALLER=$(BUILD_ROOT)/dist/bison-$(BISON_VERSION)-$(HOST_ARCH)-setup.exe
+BISON_INSTALLER_OPTIONS=                       \
+        $(BITS)                                 \
+	--appname=bison				\
+	--orgname='Perl Alien::Base Team'	\
+	--version=$(BISON_VERSION)		\
+	--nsi=$(BUILD_ROOT)/dist/bison-$(BISON_VERSION)-$(HOST_ARCH)-setup.nsi                 \
+	--description='Portable Foreign Function Interface Library'
+BISON_BUILD_PREFIX=$(BUILD_ROOT)/local/bison/$(BISON_VERSION)-$(BUILD_ARCH)/bison
+BISON_SRC_ROOT=http://ftp.gnu.org/gnu/bison
 
 LIBFFI_VERSION=3.2.1
 LIBFFI_SRC_TAR=$(BUILD_ROOT)/src/libffi-$(LIBFFI_VERSION).tar.gz
@@ -51,10 +69,10 @@ LIBARCHIVE_SRC_ROOT=http://www.libarchive.org/downloads
 all: win32 win64
 
 win32:
-	$(MAKE) libarchive libffi HOST_ARCH=i586-mingw32msvc
+	$(MAKE) libarchive libffi bison HOST_ARCH=i586-mingw32msvc
 
 win64:
-	$(MAKE) libarchive libffi HOST_ARCH=x86_64-w64-mingw32 BITS=-64
+	$(MAKE) libarchive libffi bison HOST_ARCH=x86_64-w64-mingw32 BITS=-64
 
 libarchive: $(LIBARCHIVE_BIN_TAR) $(LIBARCHIVE_INSTALLER)
 
@@ -65,7 +83,7 @@ $(LIBARCHIVE_BIN_TAR): $(LIBARCHIVE_SRC_TAR)
 	$(MKDIR) build
 	$(RM) -r build/libarchive-$(LIBARCHIVE_VERSION)
 	cd build ; tar zxf $(LIBARCHIVE_SRC_TAR)
-	cd build/libarchive-$(LIBARCHIVE_VERSION) ; ./configure $(LIBARCHIVE_CONFIGURE) && make V=1 && rm -rf $(LIBARCHIVE_BUILD_PREFIX) && make V=1 install
+	cd build/libarchive-$(LIBARCHIVE_VERSION) ; ./configure $(LIBARCHIVE_CONFIGURE) && $(MAKE) V=1 && rm -rf $(LIBARCHIVE_BUILD_PREFIX) && $(MAKE) V=1 install
 	$(MKDIR) $(BUILD_ROOT)/dist
 	$(PERL) script/update_pkgconfig.pl $(LIBARCHIVE_BUILD_PREFIX)
 	$(PERL) script/install_doco.pl build/libarchive-$(LIBARCHIVE_VERSION)/COPYING  \
@@ -86,7 +104,7 @@ $(LIBFFI_BIN_TAR): $(LIBFFI_SRC_TAR)
 	$(MKDIR) build
 	$(RM) -r build/libffi-$(LIBFFI_VERSION)
 	cd build ; tar zxf $(LIBFFI_SRC_TAR)
-	cd build/libffi-$(LIBFFI_VERSION) ; ./configure $(LIBFFI_CONFIGURE) && make V=1 && rm -rf $(LIBFFI_BUILD_PREFIX) && make V=1 install
+	cd build/libffi-$(LIBFFI_VERSION) ; ./configure $(LIBFFI_CONFIGURE) && $(MAKE) V=1 && rm -rf $(LIBFFI_BUILD_PREFIX) && $(MAKE) V=1 install
 	$(MKDIR) $(BUILD_ROOT)/dist
 	$(PERL) script/update_pkgconfig.pl $(LIBFFI_BUILD_PREFIX)
 	$(PERL) script/install_doco.pl build/libffi-$(LIBFFI_VERSION)/LICENSE   \
@@ -97,7 +115,28 @@ $(LIBFFI_SRC_TAR):
 	$(WGET) $(LIBFFI_SRC_ROOT)/libffi-$(LIBFFI_VERSION).tar.gz -O $(LIBFFI_SRC_TAR).tmp
 	$(MV) $(LIBFFI_SRC_TAR).tmp $(LIBFFI_SRC_TAR)
 
-src: $(LIBFFI_SRC_TAR) $(LIBARCHIVE_SRC_TAR)
+bison: $(BISON_BIN_TAR) $(BISON_INSTALLER)
+
+$(BISON_INSTALLER): $(BISON_BIN_TAR)
+	$(PERL) script/create_installer.pl $(BISON_BIN_TAR) --setup=$(BISON_INSTALLER) $(BISON_INSTALLER_OPTIONS)
+
+$(BISON_BIN_TAR): $(BISON_SRC_TAR)
+	$(MKDIR) build
+	$(RM) -r build/bison-$(BISON_VERSION)
+	cd build ; tar zxf $(BISON_SRC_TAR)
+	cd build/bison-$(BISON_VERSION) ; patch -p1 < ../../src/bison-3.0.4.diff
+	cd build/bison-$(BISON_VERSION) ; ./configure $(BISON_CONFIGURE) && $(MAKE) V=1 && rm -rf $(BISON_BUILD_PREFIX) && $(MAKE) V=1 install
+	$(MKDIR) $(BUILD_ROOT)/dist
+	$(PERL) script/install_doco.pl build/bison-$(BISON_VERSION)/COPYING   \
+	                               build/bison-$(BISON_VERSION)/NEWS      \
+	                               build/bison-$(BISON_VERSION)/README    $(BISON_BUILD_PREFIX)
+	cd $(BISON_BUILD_PREFIX)/.. ; tar zcvf $(BISON_BIN_TAR) bison
+
+$(BISON_SRC_TAR):
+	$(WGET) $(BISON_SRC_ROOT)/bison-$(BISON_VERSION).tar.gz -O $(BISON_SRC_TAR).tmp
+	$(MV) $(BISON_SRC_TAR).tmp $(BISON_SRC_TAR)
+
+src: $(BISON_SRC_TAR) $(LIBFFI_SRC_TAR) $(LIBARCHIVE_SRC_TAR)
 
 clean:
 	$(RM) src/*.tmp

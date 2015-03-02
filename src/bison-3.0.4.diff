@@ -1,0 +1,19 @@
+diff -r -u a/src/getargs.c b/src/getargs.c
+--- a/src/getargs.c	2015-01-16 09:47:42.000000000 -0500
++++ b/src/getargs.c	2015-03-02 17:42:14.366778975 -0500
+@@ -360,6 +360,7 @@
+       fputs (_("General help using GNU software: "
+                "<http://www.gnu.org/gethelp/>.\n"),
+              stdout);
++#if 0
+       /* Don't output this redundant message for English locales.
+          Note we still output for 'C' so that it gets included in the
+          man page.  */
+@@ -372,6 +373,7 @@
+            email address.  */
+         fputs (_("Report translation bugs to "
+                  "<http://translationproject.org/team/>.\n"), stdout);
++#endif
+       fputs (_("For complete documentation, run: info bison.\n"), stdout);
+     }
+ 
