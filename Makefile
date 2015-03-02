@@ -22,11 +22,12 @@ LIBFFI_INSTALLER=$(BUILD_ROOT)/dist/libffi-$(LIBFFI_VERSION)-$(HOST_ARCH)-setup.
 LIBFFI_INSTALLER_OPTIONS=                       \
         $(BITS)                                 \
 	--appname=libffi			\
-	--orgname='White Dactyl Labs'		\
+	--orgname='Perl Alien::Base Team'	\
 	--version=$(LIBFFI_VERSION)		\
 	--nsi=$(BUILD_ROOT)/dist/libffi-$(LIBFFI_VERSION)-$(HOST_ARCH)-setup.nsi                 \
 	--description='Portable Foreign Function Interface Library'
-LIBFFI_BUILD_PREFIX=$(BUILD_ROOT)/local/$(LIBFFI_VERSION)-$(BUILD_ARCH)/libffi
+LIBFFI_BUILD_PREFIX=$(BUILD_ROOT)/local/libffi/$(LIBFFI_VERSION)-$(BUILD_ARCH)/libffi
+LIBFFI_SRC_ROOT=ftp://sourceware.org/pub/libffi
 
 LIBARCHIVE_VERSION=3.1.2
 LIBARCHIVE_SRC_TAR=$(BUILD_ROOT)/src/libarchive-$(LIBARCHIVE_VERSION).tar.gz
@@ -39,12 +40,13 @@ LIBARCHIVE_INSTALLER=$(BUILD_ROOT)/dist/libarchive-$(LIBARCHIVE_VERSION)-$(HOST_
 LIBARCHIVE_INSTALLER_OPTIONS=                   \
         $(BITS)                                 \
 	--appname=libarchive			\
-	--orgname='White Dactyl Labs'		\
+	--orgname='Perl Alien::Base Team'	\
 	--version=$(LIBARCHIVE_VERSION)		\
 	--icon=resource/icon.ico                \
 	--nsi=$(BUILD_ROOT)/dist/libarchive-$(LIBARCHIVE_VERSION)-$(HOST_ARCH)-setup.nsi                 \
 	--description='Multi-format archive and compression library'
-LIBARCHIVE_BUILD_PREFIX=$(BUILD_ROOT)/local/$(LIBARCHIVE_VERSION)-$(BUILD_ARCH)/libarchive
+LIBARCHIVE_BUILD_PREFIX=$(BUILD_ROOT)/local/libarchive/$(LIBARCHIVE_VERSION)-$(BUILD_ARCH)/libarchive
+LIBARCHIVE_SRC_ROOT=http://www.libarchive.org/downloads
 
 all: win32 win64
 
@@ -66,13 +68,13 @@ $(LIBARCHIVE_BIN_TAR): $(LIBARCHIVE_SRC_TAR)
 	cd build/libarchive-$(LIBARCHIVE_VERSION) ; ./configure $(LIBARCHIVE_CONFIGURE) && make V=1 && rm -rf $(LIBARCHIVE_BUILD_PREFIX) && make V=1 install
 	$(MKDIR) $(BUILD_ROOT)/dist
 	$(PERL) script/update_pkgconfig.pl $(LIBARCHIVE_BUILD_PREFIX)
-	$(PERL) script/install_doco.pl build/libarchive-$(LIBARCHIVE_VERSION)/COPYING  $(LIBARCHIVE_BUILD_PREFIX)
-	$(PERL) script/install_doco.pl build/libarchive-$(LIBARCHIVE_VERSION)/README   $(LIBARCHIVE_BUILD_PREFIX)
-	$(PERL) script/install_doco.pl build/libarchive-$(LIBARCHIVE_VERSION)/NEWS     $(LIBARCHIVE_BUILD_PREFIX)
+	$(PERL) script/install_doco.pl build/libarchive-$(LIBARCHIVE_VERSION)/COPYING  \
+	                               build/libarchive-$(LIBARCHIVE_VERSION)/README   \
+	                               build/libarchive-$(LIBARCHIVE_VERSION)/NEWS     $(LIBARCHIVE_BUILD_PREFIX)
 	cd $(LIBARCHIVE_BUILD_PREFIX)/.. ; tar zcvf $(LIBARCHIVE_BIN_TAR) libarchive
 
 $(LIBARCHIVE_SRC_TAR):
-	$(WGET) http://www.libarchive.org/downloads/libarchive-3.1.2.tar.gz -O $(LIBARCHIVE_SRC_TAR).tmp
+	$(WGET) $(LIBARCHIVE_SRC_ROOT)/libarchive-$(LIBARCHIVE_VERSION).tar.gz -O $(LIBARCHIVE_SRC_TAR).tmp
 	$(MV) $(LIBARCHIVE_SRC_TAR).tmp $(LIBARCHIVE_SRC_TAR)
 
 libffi: $(LIBFFI_BIN_TAR) $(LIBFFI_INSTALLER)
@@ -87,12 +89,12 @@ $(LIBFFI_BIN_TAR): $(LIBFFI_SRC_TAR)
 	cd build/libffi-$(LIBFFI_VERSION) ; ./configure $(LIBFFI_CONFIGURE) && make V=1 && rm -rf $(LIBFFI_BUILD_PREFIX) && make V=1 install
 	$(MKDIR) $(BUILD_ROOT)/dist
 	$(PERL) script/update_pkgconfig.pl $(LIBFFI_BUILD_PREFIX)
-	$(PERL) script/install_doco.pl build/libffi-$(LIBFFI_VERSION)/LICENSE   $(LIBFFI_BUILD_PREFIX)
-	$(PERL) script/install_doco.pl build/libffi-$(LIBFFI_VERSION)/README    $(LIBFFI_BUILD_PREFIX)
+	$(PERL) script/install_doco.pl build/libffi-$(LIBFFI_VERSION)/LICENSE   \
+	                               build/libffi-$(LIBFFI_VERSION)/README    $(LIBFFI_BUILD_PREFIX)
 	cd $(LIBFFI_BUILD_PREFIX)/.. ; tar zcvf $(LIBFFI_BIN_TAR) libffi
 
 $(LIBFFI_SRC_TAR):
-	$(WGET) ftp://sourceware.org/pub/libffi/libffi-$(LIBFFI_VERSION).tar.gz -O $(LIBFFI_SRC_TAR).tmp
+	$(WGET) $(LIBFFI_SRC_ROOT)/libffi-$(LIBFFI_VERSION).tar.gz -O $(LIBFFI_SRC_TAR).tmp
 	$(MV) $(LIBFFI_SRC_TAR).tmp $(LIBFFI_SRC_TAR)
 
 src: $(LIBFFI_SRC_TAR) $(LIBARCHIVE_SRC_TAR)
@@ -103,4 +105,4 @@ clean:
 	$(RM) -r build
 
 realclean: clean
-	$(RM) src/*.tar.gz
+	$(RM) src/*.tar.gz dist/*
